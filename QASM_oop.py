@@ -9,5 +9,16 @@ class QASM_compiler():
         self.read_circuit = open(filepath, 'r')
         self.read_circuit.read()
 
+    def simulate_circuit(self):
+        pass
+
+    def measure(self):
+        pass
+
+    def visualize(self):
+        pass
+
+
+
 
 circuit1 = QASM_compiler("/QASM samples/test1.qasm")
