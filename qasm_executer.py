@@ -7,7 +7,7 @@ from QASM_oop import QASM_compiler
     
 """ 
 
-circuit1 = QASM_compiler("QASM samples/test1.qasm")
+circuit1 = QASM_compiler("QASM samples/test4.qasm")
 
 print("✵ The parsed quantum operations are: ",circuit1.read_circuit)
 print("✵ Number of qubits: ",circuit1.nq)
@@ -19,3 +19,5 @@ print("✵ The measurement probability distribution is: ", circuit1.measurements
 print("✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵")
 print("✵ Chronological time evolution of the quantum circuit: \n", circuit1.state)
 print("✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵")
+
+circuit1.visualize()

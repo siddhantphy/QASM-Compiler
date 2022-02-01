@@ -302,11 +302,8 @@ class QASM_compiler():
         ele0_n = ft.reduce(lambda x, y: np.kron(x, y), ele0n)
         ele1_n = ft.reduce(lambda x, y: np.kron(x, y), ele1n)
 
-        self.state[list(self.state.keys())[-1]]
-
-
-        prob_0 = np.sqrt(np.dot(self.state[list(self.state.keys())[-1]], np.matmul(ele0_n, self.state[list(self.state.keys())[-1]])))
-        prob_1 = np.sqrt(np.dot(self.state[list(self.state.keys())[-1]], np.matmul(ele1_n, self.state[list(self.state.keys())[-1]])))
+        prob_0 = np.dot(self.state[list(self.state.keys())[-1]], np.matmul(ele0_n, self.state[list(self.state.keys())[-1]]))
+        prob_1 = np.dot(self.state[list(self.state.keys())[-1]], np.matmul(ele1_n, self.state[list(self.state.keys())[-1]]))
         weights = [prob_0, prob_1]
 
         pick = int((random.choices([0, 1]), weights)[0][0])
@@ -323,7 +320,134 @@ class QASM_compiler():
 
         return pick
 
-
-
     def visualize(self):
-        pass
+        print(self.read_circuit,self.nq)
+        with open('circuit.txt','w') as wr:
+            wr.write("\\begin{quantikz}")
+            for i in range(self.nq):
+                wr.write("\n")
+                wr.write("\\lstick{$\ket{0}$}")
+                for l in range(len(self.read_circuit)):
+                    if l == len(self.read_circuit)-1:
+                        if self.read_circuit[l][0] == 'h':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{H}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'x':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{X}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'y':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{Y}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'z':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{Z}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 's':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{S}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'cnot':
+                            if self.read_circuit[l][1][0] == str(i):
+                                lines_down = int(self.read_circuit[l][1][-1])
+                                lines_down = lines_down - i 
+                                wr.write(" & \\ctrl{%s}" % (int(lines_down)))
+                            elif self.read_circuit[l][1][-1] == str(i):
+                                wr.write(" & \\targ{}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'measure':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\meter{}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'c-x':
+                            if self.read_circuit[l][1][0] == str(i):
+                                lines_down = int(self.read_circuit[l][1][-1])
+                                lines_down = lines_down - i 
+                                wr.write(" & \\ctrl{%s}" % (int(lines_down)))
+                            elif self.read_circuit[l][1][-1] == str(i):
+                                wr.write(" & \\gate{c-x}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'c-z':
+                            if self.read_circuit[l][1][0] == str(i):
+                                lines_down = int(self.read_circuit[l][1][-1])
+                                lines_down = lines_down - i 
+                                wr.write(" & \\ctrl{%s}" % (int(lines_down)))
+                            elif self.read_circuit[l][1][-1] == str(i):
+                                wr.write(" & \\gate{c-z}")
+                            else:
+                                wr.write(" & \\qw")
+                        else:
+                            wr.write(" & \\qw")
+                        wr.write(" \\\\")
+                    else:
+                        if self.read_circuit[l][0] == 'h':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{H}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'x':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{X}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'y':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{Y}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'z':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{Z}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 's':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\gate{S}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'cnot':
+                            if self.read_circuit[l][1][0] == str(i):
+                                lines_down = int(self.read_circuit[l][1][-1])
+                                lines_down = lines_down - i 
+                                wr.write(" & \\ctrl{%s}" % (int(lines_down)))
+                            elif self.read_circuit[l][1][-1] == str(i):
+                                wr.write(" & \\targ{}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'measure':
+                            if self.read_circuit[l][1] == str(i):
+                                wr.write(" & \\meter{}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'c-x':
+                            if self.read_circuit[l][1][0] == str(i):
+                                lines_down = int(self.read_circuit[l][1][-1])
+                                lines_down = lines_down - i 
+                                wr.write(" & \\ctrl{%s}" % (int(lines_down)))
+                            elif self.read_circuit[l][1][-1] == str(i):
+                                wr.write(" & \\gate{c-x}")
+                            else:
+                                wr.write(" & \\qw")
+                        elif self.read_circuit[l][0] == 'c-z':
+                            if self.read_circuit[l][1][0] == str(i):
+                                lines_down = int(self.read_circuit[l][1][-1])
+                                lines_down = lines_down - i 
+                                wr.write(" & \\ctrl{%s}" % (int(lines_down)))
+                            elif self.read_circuit[l][1][-1] == str(i):
+                                wr.write(" & \\gate{c-z}")
+                            else:
+                                wr.write(" & \\qw")
+                        else:
+                            wr.write(" & \\qw")
+            wr.write("\n")
+            wr.write("\\end{quantikz}")
