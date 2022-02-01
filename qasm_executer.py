@@ -6,8 +6,11 @@ from QASM_oop import QASM_compiler
 ==========================================================================================================
     
 """ 
-
-circuit1 = QASM_compiler("QASM samples/test4.qasm")
+# circuit1 = QASM_compiler("QASM samples/test1.qasm")
+# circuit1 = QASM_compiler("QASM samples/test2.qasm")
+# circuit1 = QASM_compiler("QASM samples/test3.qasm")
+# circuit1 = QASM_compiler("QASM samples/test4.qasm")
+circuit1 = QASM_compiler("QASM samples/rep_code.qasm")
 
 print("✵ The parsed quantum operations are: ",circuit1.read_circuit)
 print("✵ Number of qubits: ",circuit1.nq)
@@ -21,3 +24,13 @@ print("✵ Chronological time evolution of the quantum circuit: \n", circuit1.st
 print("✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵✵")
 
 circuit1.visualize()
+
+"""
+==========================================================================================================
+                                            Statistics
+==========================================================================================================
+    
+""" 
+
+# for itr in list(range(10)):
+#     circuit1.circuit_simulate()
