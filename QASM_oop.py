@@ -1,6 +1,7 @@
+from time import time
 import numpy as np
 import functools as ft
-# from typing import list
+import random
 
 class QASM_compiler():
 
@@ -8,10 +9,9 @@ class QASM_compiler():
         self.qasmfile = file_p
         self.time: int
         self.nq: int
-        self.operations: dict
+        self.state = {}
         self.gates = {}
-
-        # self.current_state: np.array
+        self.measurements = {}
 
         self.qasm_read(self.qasmfile)
         self.parse_operations()
@@ -69,7 +69,7 @@ class QASM_compiler():
 
         for i in list(range(self.nq)):
                 idle_nop[i] = id
-        
+            
         nop = ft.reduce(lambda x, y: np.kron(x, y), idle_nop)
         return nop
 
@@ -100,12 +100,16 @@ class QASM_compiler():
 
         return cnot
 
-        
+    def CX(self, control, target):
+        pass
+
+    def CZ(self, control, target):
+        pass
 
 
     def H(self, qubit):
         id = np.identity(2)
-        h =(1/np.sqrt(2)) * np.array([[1, 0], [0, -1]])
+        h =(1/np.sqrt(2)) * np.array([[1, 1], [1, -1]])
         hn = list(range(self.nq))
         
         for i in list(range(self.nq)):
@@ -185,6 +189,14 @@ class QASM_compiler():
     ==========================================================================================================
     
     """ 
+    @property
+    def current_state(self):
+        return self.current_state
+
+    @current_state.setter
+    def current_state(self):
+        self.current_state = self.state[self.state.keys()[-1]]
+        return self.current_state
      
     def initialize_register(self):
         qubits = 0
@@ -201,7 +213,7 @@ class QASM_compiler():
     def quantum_operations(self):
         for op in range(len(self.read_circuit)):
             if self.read_circuit[op][0] == 'nop':
-                self.gates[f't{op}'] = self.nop()
+                self.gates[f't{op}'] = self.idle()
 
             if self.read_circuit[op][0] == 'cnot':
                 control = int(list(self.read_circuit[op][1])[0])
@@ -223,27 +235,95 @@ class QASM_compiler():
             if self.read_circuit[op][0] == 's':
                 self.gates[f't{op}'] = self.S(int(list(self.read_circuit[op][1])[-1]))
 
+            if self.read_circuit[op][0] == 'measure':
+                self.gates[f't{op}'] = int(list(self.read_circuit[op][1])[-1])
+
+            if self.read_circuit[op][0] == 'c-x':
+                self.gates[f't{op}'] = int(list(self.read_circuit[op][1])[-1])
+            
+
+    def circuit_simulate(self):
+        self.state['t-1'] = np.zeros(2**self.nq)
+        self.state['t-1'][0] = 1
+
+        for op in range(len(self.read_circuit)):
+            if self.read_circuit[op][0] == 'nop':
+                self.state[f't{op}'] = np.matmul(self.idle(), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'cnot':
+                control = int(list(self.read_circuit[op][1])[0])
+                target = int(list(self.read_circuit[op][1])[-1])
+                self.state[f't{op}'] = np.matmul(self.CNOT(control, target), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'h':
+                self.state[f't{op}'] = np.matmul(self.H(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 's':
+                self.state[f't{op}'] = np.matmul(self.S(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'x':
+                self.state[f't{op}'] = np.matmul(self.X(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'y':
+                self.state[f't{op}'] = np.matmul(self.Y(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'z':
+                self.state[f't{op}'] = np.matmul(self.Z(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'measure':
+                _temp_msr = self.measure(int(list(self.read_circuit[op][1])[-1]), op)
+            elif self.read_circuit[op][0] == 'c-x':
+                control = int(list(self.read_circuit[op][1])[0])
+                target = int(list(self.read_circuit[op][1])[-1])
+                msre = self.measure(control, op)
+                if msre == 1:
+                    self.state[f't{op}'] = np.matmul(self.X(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+                else:
+                    self.state[f't{op}'] = self.state[f't{op-1}']
+            elif self.read_circuit[op][0] == 'c-z':
+                control = int(list(self.read_circuit[op][1])[0])
+                target = int(list(self.read_circuit[op][1])[-1])
+                msre = self.measure(control, op)
+                if msre == 1:
+                    self.state[f't{op}'] = np.matmul(self.Z(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
+                else:
+                    self.state[f't{op}'] = self.state[f't{op-1}']
 
 
-    def simulate_circuit(self):
-        start = np.zeros(2**self.nq)
-        start[0] = 1
+    def measure(self, qubit, time):
+        ele0 = np.array([[1, 0], [0, 0]])
+        ele1 = np.array([[0, 0], [0, 1]])
+        id = np.identity(2)
+
+        ele0n = list(range(self.nq))
+        ele1n = list(range(self.nq))
+        
+        for i in list(range(self.nq)):
+            if i == qubit:
+                ele0n[i] = ele0
+                ele1n[i] = ele1
+            else:
+                ele0n[i] = id
+                ele1n[i] = id
+       
+        ele0_n = ft.reduce(lambda x, y: np.kron(x, y), ele0n)
+        ele1_n = ft.reduce(lambda x, y: np.kron(x, y), ele1n)
+
+        self.state[list(self.state.keys())[-1]]
 
 
-    def measure(self):
-        pass
+        prob_0 = np.sqrt(np.dot(self.state[list(self.state.keys())[-1]], np.matmul(ele0_n, self.state[list(self.state.keys())[-1]])))
+        prob_1 = np.sqrt(np.dot(self.state[list(self.state.keys())[-1]], np.matmul(ele1_n, self.state[list(self.state.keys())[-1]])))
+        weights = [prob_0, prob_1]
+
+        pick = int((random.choices([0, 1]), weights)[0][0])
+
+        if pick == 0:
+            post_measure = np.matmul(ele0_n,self.state[list(self.state.keys())[-1]])
+        elif pick == 1:
+            post_measure = np.matmul(ele1_n,self.state[list(self.state.keys())[-1]])
+        
+        post_measure = post_measure / np.linalg.norm(post_measure)
+
+        self.measurements[f'q{qubit}'] = weights[pick]
+        self.state[f't{time}'] = post_measure
+
+        return pick
+
 
 
     def visualize(self):
         pass
-
-
-
-
-circuit1 = QASM_compiler("QASM samples/test3.qasm")
-print(circuit1.read_circuit)
-print(circuit1.time)
-circuit1.quantum_operations()
-print(circuit1.gates)
-
-# print(circuit1.CNOT(1,0))
