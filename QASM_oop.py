@@ -9,7 +9,7 @@ class QASM_compiler():
         self.time: int
         self.nq: int
         self.operations: dict
-        self.gates: dict
+        self.gates = {}
 
         # self.current_state: np.array
 
@@ -62,6 +62,16 @@ class QASM_compiler():
     ==========================================================================================================
     
     """
+
+    def idle(self):
+        id = np.identity(2)
+        idle_nop = list(range(self.nq))
+
+        for i in list(range(self.nq)):
+                idle_nop[i] = id
+        
+        nop = ft.reduce(lambda x, y: np.kron(x, y), idle_nop)
+        return nop
 
     def CNOT(self, control, target):
         id = np.identity(2)
@@ -187,14 +197,42 @@ class QASM_compiler():
         self.time = self.time - qubits
         return
 
-    def gates(self):
-        pass
+
+    def quantum_operations(self):
+        for op in range(len(self.read_circuit)):
+            if self.read_circuit[op][0] == 'nop':
+                self.gates[f't{op}'] = self.nop()
+
+            if self.read_circuit[op][0] == 'cnot':
+                control = int(list(self.read_circuit[op][1])[0])
+                target = int(list(self.read_circuit[op][1])[-1])
+                self.gates[f't{op}'] = self.CNOT(control, target)
+
+            if self.read_circuit[op][0] == 'h':
+                self.gates[f't{op}'] = self.H(int(list(self.read_circuit[op][1])[-1]))
+
+            if self.read_circuit[op][0] == 'x':
+                self.gates[f't{op}'] = self.X(int(list(self.read_circuit[op][1])[-1]))
+
+            if self.read_circuit[op][0] == 'y':
+                self.gates[f't{op}'] = self.Y(int(list(self.read_circuit[op][1])[-1]))
+
+            if self.read_circuit[op][0] == 'z':
+                self.gates[f't{op}'] = self.Z(int(list(self.read_circuit[op][1])[-1]))
+
+            if self.read_circuit[op][0] == 's':
+                self.gates[f't{op}'] = self.S(int(list(self.read_circuit[op][1])[-1]))
+
+
 
     def simulate_circuit(self):
-        
+        start = np.zeros(2**self.nq)
+        start[0] = 1
+
 
     def measure(self):
         pass
+
 
     def visualize(self):
         pass
@@ -205,5 +243,7 @@ class QASM_compiler():
 circuit1 = QASM_compiler("QASM samples/test3.qasm")
 print(circuit1.read_circuit)
 print(circuit1.time)
+circuit1.quantum_operations()
+print(circuit1.gates)
 
 # print(circuit1.CNOT(1,0))
