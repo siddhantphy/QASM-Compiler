@@ -1,17 +1,17 @@
 #
-# File:   test3.qasm
-# Date:   22-Mar-04
-# Author: I. Chuang <ichuang@mit.edu>
+# File:   rep_code.qasm
+# Date:   02-Feb-22
+# Author: Siddhant and Matthew
 #
-# Sample qasm input file - simple teleportation circuit
 #
     qubit 	q0
     qubit 	q1
 	qubit 	q2
 
-	h	q1	# create EPR pair
+	h	q0
 	cnot	q0,q1
-	cnot	q0,q2	# encoding 
+	cnot	q0,q2	# encoding
+	x 	q1 	# bit flip Error
 	cnot	q0,q1   # Z1 stabilizer  
 	cnot    q1,q2   # Z2 stabilizer 
 	cnot    q1,q0 	# decoding

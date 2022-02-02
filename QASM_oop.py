@@ -4,13 +4,15 @@ import functools as ft
 import random
 
 class QASM_compiler():
+    """
+    QASM Compiler class for creating and simulating quantum circuits from QASM language.
+    """
 
     def __init__(self, file_p: str):
         self.qasmfile = file_p
         self.time: int
         self.nq: int
         self.state = {}
-        self.gates = {}
         self.measurements = {}
         self.probabilities = {}
 
@@ -101,11 +103,32 @@ class QASM_compiler():
 
         return cnot
 
-    def CX(self, control, target):
-        pass
-
     def CZ(self, control, target):
-        pass
+        id = np.identity(2)
+        ele0 = np.array([[1, 0], [0, 0]])
+        ele1 = np.array([[0, 0], [0, 1]])
+        z = np.array([[1, 0], [0, -1]])
+        
+        first = list(range(self.nq))
+        second = list(range(self.nq))
+
+        for i in list(range(self.nq)):
+            if i == control:
+                first[i] = ele0
+                second[i] = ele1
+            elif i == target:
+                first[i] = id
+                second[i] = z
+            else:
+                first[i] = id
+                second[i] = id
+        
+        first_n = ft.reduce(lambda x, y: np.kron(x, y), first)
+        second_n = ft.reduce(lambda x, y: np.kron(x, y), second)
+
+        cz = first_n + second_n
+
+        return cz
 
 
     def H(self, qubit):
@@ -209,7 +232,7 @@ class QASM_compiler():
         self.read_circuit = self.read_circuit[qubits:]
         self.time = self.time - qubits
         return
-          
+
 
     def circuit_simulate(self):
         self.state['t-1'] = np.zeros(2**self.nq)
@@ -222,6 +245,10 @@ class QASM_compiler():
                 control = int(list(self.read_circuit[op][1])[0])
                 target = int(list(self.read_circuit[op][1])[-1])
                 self.state[f't{op}'] = np.matmul(self.CNOT(control, target), self.state[f't{op-1}'])
+            elif self.read_circuit[op][0] == 'cz':
+                control = int(list(self.read_circuit[op][1])[0])
+                target = int(list(self.read_circuit[op][1])[-1])
+                self.state[f't{op}'] = np.matmul(self.CZ(control, target), self.state[f't{op-1}'])
             elif self.read_circuit[op][0] == 'h':
                 self.state[f't{op}'] = np.matmul(self.H(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
             elif self.read_circuit[op][0] == 's':
