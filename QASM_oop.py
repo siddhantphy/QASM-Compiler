@@ -12,6 +12,7 @@ class QASM_compiler():
         self.state = {}
         self.gates = {}
         self.measurements = {}
+        self.probabilities = {}
 
         self.qasm_read(self.qasmfile)
         self.parse_operations()
@@ -208,39 +209,7 @@ class QASM_compiler():
         self.read_circuit = self.read_circuit[qubits:]
         self.time = self.time - qubits
         return
-
-
-    def quantum_operations(self):
-        for op in range(len(self.read_circuit)):
-            if self.read_circuit[op][0] == 'nop':
-                self.gates[f't{op}'] = self.idle()
-
-            if self.read_circuit[op][0] == 'cnot':
-                control = int(list(self.read_circuit[op][1])[0])
-                target = int(list(self.read_circuit[op][1])[-1])
-                self.gates[f't{op}'] = self.CNOT(control, target)
-
-            if self.read_circuit[op][0] == 'h':
-                self.gates[f't{op}'] = self.H(int(list(self.read_circuit[op][1])[-1]))
-
-            if self.read_circuit[op][0] == 'x':
-                self.gates[f't{op}'] = self.X(int(list(self.read_circuit[op][1])[-1]))
-
-            if self.read_circuit[op][0] == 'y':
-                self.gates[f't{op}'] = self.Y(int(list(self.read_circuit[op][1])[-1]))
-
-            if self.read_circuit[op][0] == 'z':
-                self.gates[f't{op}'] = self.Z(int(list(self.read_circuit[op][1])[-1]))
-
-            if self.read_circuit[op][0] == 's':
-                self.gates[f't{op}'] = self.S(int(list(self.read_circuit[op][1])[-1]))
-
-            if self.read_circuit[op][0] == 'measure':
-                self.gates[f't{op}'] = int(list(self.read_circuit[op][1])[-1])
-
-            if self.read_circuit[op][0] == 'c-x':
-                self.gates[f't{op}'] = int(list(self.read_circuit[op][1])[-1])
-            
+          
 
     def circuit_simulate(self):
         self.state['t-1'] = np.zeros(2**self.nq)
@@ -268,16 +237,14 @@ class QASM_compiler():
             elif self.read_circuit[op][0] == 'c-x':
                 control = int(list(self.read_circuit[op][1])[0])
                 target = int(list(self.read_circuit[op][1])[-1])
-                msre = self.measure(control, op)
-                if msre == 1:
+                if self.measurements[f'q{control}'] == 1:
                     self.state[f't{op}'] = np.matmul(self.X(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
                 else:
                     self.state[f't{op}'] = self.state[f't{op-1}']
             elif self.read_circuit[op][0] == 'c-z':
                 control = int(list(self.read_circuit[op][1])[0])
-                target = int(list(self.read_circuit[op][1])[-1])
-                msre = self.measure(control, op)
-                if msre == 1:
+                target = int(list(self.read_circuit[op][1])[-1]) 
+                if self.measurements[f'q{control}'] == 1:
                     self.state[f't{op}'] = np.matmul(self.Z(int(list(self.read_circuit[op][1])[-1])), self.state[f't{op-1}'])
                 else:
                     self.state[f't{op}'] = self.state[f't{op-1}']
@@ -312,16 +279,17 @@ class QASM_compiler():
             post_measure = np.matmul(ele0_n,self.state[list(self.state.keys())[-1]])
         elif pick == 1:
             post_measure = np.matmul(ele1_n,self.state[list(self.state.keys())[-1]])
-        
-        post_measure = post_measure / np.linalg.norm(post_measure)
 
-        self.measurements[f'q{qubit}'] = weights[pick]
-        self.state[f't{time}'] = post_measure
+        post_measure_normalized = post_measure / np.linalg.norm(post_measure)
+
+        self.probabilities[f'q{qubit}'] = weights[pick]
+        self.measurements[f'q{qubit}'] = pick
+        self.state[f't{time}'] = post_measure_normalized
 
         return pick
 
     def visualize(self):
-        print(self.read_circuit,self.nq)
+        # print(self.read_circuit,self.nq)
         with open('circuit.txt','w') as wr:
             wr.write("\\begin{quantikz}")
             for i in range(self.nq):
